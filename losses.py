@@ -19,12 +19,9 @@ def voxel_loss(voxel_src,voxel_tgt):
 def chamfer_loss(point_cloud_src,point_cloud_tgt):
 	# point_cloud_src, point_cloud_src: b x n_points x 3  
 
-	# TODO: Figure out shapes for everything
-	ipdb.set_trace()
-
 	# Chamfer distance between two point clouds
-	src_dist, _ = knn_points(point_cloud_src, point_cloud_tgt)
-	tgt_dist, _ = knn_points(point_cloud_tgt, point_cloud_src)
+	src_dist, _, _ = knn_points(point_cloud_src, point_cloud_tgt)
+	tgt_dist, _, _ = knn_points(point_cloud_tgt, point_cloud_src)
 
 	return torch.mean(src_dist) + torch.mean(tgt_dist)
 

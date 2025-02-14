@@ -71,6 +71,9 @@ def fit_pointcloud(pointclouds_src, pointclouds_tgt, args):
 
         loss = losses.chamfer_loss(pointclouds_src, pointclouds_tgt)
 
+        # if loss < 1e-3:
+        #     break
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()        
@@ -141,7 +144,9 @@ def train_model(args):
         pointclouds_tgt = sample_points_from_meshes(mesh_tgt, args.n_points)
 
         # fitting
-        fit_pointcloud(pointclouds_src, pointclouds_tgt, args)        
+        fit_pointcloud(pointclouds_src, pointclouds_tgt, args)
+        visualize_pointcloud(pointclouds_src, "outputs/1.2.1.gif", args)
+        visualize_pointcloud(pointclouds_tgt, "outputs/1.2.2.gif", args)
     
     elif args.type == "mesh":
         # initialization
