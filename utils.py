@@ -44,7 +44,7 @@ def visualize_voxel(voxels: torch.Tensor, filename: str, args):
 
 def visualize_pointcloud(pointcloud: torch.Tensor, filename: str, args):
     '''
-    Render a 360 degree orbit of an pointcloud grid and save to GIF
+    Render a 360 degree orbit of an pointcloud and save to GIF
 
     Args:
         pointcloud (torch.Tensor): pointcloud grid to visualize
@@ -60,6 +60,28 @@ def visualize_pointcloud(pointcloud: torch.Tensor, filename: str, args):
     )
 
     orbit(cloud, filename, args)
+
+def visualize_mesh(mesh: pytorch3d.structures.meshes.Meshes, filename: str, args):
+    '''
+    Render a 360 degree orbit of an mesh and save to GIF
+
+    Args:
+        mesh (pytorch3d.structures.meshes.Meshes): mesh grid to visualize
+        filename (str): Output filename to save (e.g. "out.gif")
+        args (argparse.Namespace): Object containing args.device
+    '''
+    vertices = mesh.verts_list()[0].unsqueeze(0)
+    faces = mesh.faces_list()[0].unsqueeze(0)
+    textures = torch.ones_like(torch.tensor(vertices))
+    textures = textures * torch.tensor([0.7, 0.7, 1], device=torch.device(args.device))
+    mesh = pytorch3d.structures.Meshes(
+        verts=vertices,
+        faces=faces,
+        textures=pytorch3d.renderer.TexturesVertex(textures)
+    )
+    mesh = mesh.to(torch.device(args.device))
+
+    orbit(mesh, filename, args)
 
 def orbit(obj, filename: str, args, inc: int = 10):
     '''

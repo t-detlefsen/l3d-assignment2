@@ -46,6 +46,9 @@ def fit_mesh(mesh_src, mesh_tgt, args):
 
         loss = args.w_chamfer * loss_reg + args.w_smooth * loss_smooth
 
+        # if loss < 1e-3:
+        #     break
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()        
@@ -155,7 +158,9 @@ def train_model(args):
         mesh_tgt = Meshes(verts=[feed_cuda['verts']], faces=[feed_cuda['faces']])
 
         # fitting
-        fit_mesh(mesh_src, mesh_tgt, args)        
+        fit_mesh(mesh_src, mesh_tgt, args)
+        visualize_mesh(mesh_src, "outputs/1.3.1.gif", args)
+        visualize_mesh(mesh_tgt, "outputs/1.3.2.gif", args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Model Fit', parents=[get_args_parser()])

@@ -26,6 +26,5 @@ def chamfer_loss(point_cloud_src,point_cloud_tgt):
 	return torch.mean(src_dist) + torch.mean(tgt_dist)
 
 def smoothness_loss(mesh_src):
-	loss_laplacian = mesh_laplacian_smoothing()
 	# implement laplacian smoothening loss
 	return mesh_laplacian_smoothing(mesh_src)
