@@ -10,7 +10,7 @@ from pytorch3d.structures import Meshes
 import dataset_location
 import torch
 
-
+from utils import *
 
 
 
@@ -94,6 +94,9 @@ def fit_voxel(voxels_src, voxels_tgt, args):
 
         loss = losses.voxel_loss(voxels_src,voxels_tgt)
 
+        # if loss < 1e-3:
+        #     break
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()        
@@ -105,10 +108,7 @@ def fit_voxel(voxels_src, voxels_tgt, args):
 
         print("[%4d/%4d]; ttime: %.0f (%.2f); loss: %.3f" % (step, args.max_iter, total_time,  iter_time, loss_vis))
     
-    # VISUALIZE
-
-    print('Done!')
-
+    print('Done!')    
 
 def train_model(args):
     r2n2_dataset = R2N2("train", dataset_location.SHAPENET_PATH, dataset_location.R2N2_PATH, dataset_location.SPLITS_PATH, return_voxels=True)
@@ -131,7 +131,8 @@ def train_model(args):
 
         # fitting
         fit_voxel(voxels_src, voxels_tgt, args)
-
+        visualize_voxel(voxels_src, "outputs/1.1.1.gif", args)
+        visualize_voxel(voxels_tgt, "outputs/1.1.2.gif", args)
 
     elif args.type == "point":
         # initialization
@@ -150,11 +151,6 @@ def train_model(args):
 
         # fitting
         fit_mesh(mesh_src, mesh_tgt, args)        
-
-
-    
-    
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Model Fit', parents=[get_args_parser()])
