@@ -11,8 +11,8 @@ def voxel_loss(voxel_src,voxel_tgt):
 	# voxel_tgt: b x h x w x d
 	loss = torch.nn.BCELoss()
 
-	# TODO: Figure out shapes for everything
-	ipdb.set_trace()
+	# IDK WHY - source min is negative sometimes
+	voxel_src = torch.clamp(voxel_src, 0, 1)
 
 	return loss(voxel_src, voxel_tgt)
 
