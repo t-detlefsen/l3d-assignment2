@@ -15,9 +15,6 @@ from pytorch3d.renderer import (
     HardPhongShader,
 )
 
-# NOTE: Temporary
-import ipdb
-
 def visualize_voxel(voxels: torch.Tensor, filename: str, args):
     '''
     Render a 360 degree orbit of an voxel grid and save to GIF
@@ -97,19 +94,19 @@ def orbit(obj, filename: str, args, inc: int = 10):
 
     images = []
     for angle in tqdm(range(0, 360, inc)):
-        images.append(render(obj, angle, args))
+        images.append(render(obj, args, angle))
 
     duration = 1000 // 15
     imageio.mimsave(filename, images, duration=duration, loop=0)
 
-def render(obj, angle: int, args):
+def render(obj, args, angle: int = 0):
     '''
     Render a single view of a mesh
 
     Args:
         obj: Object to render
-        angle (float): Angle to render mesh from
         args (argparse.Namespace): Object containing args.device
+        angle (float): Angle to render mesh from
 
     Returns:
         image (np.ndarray): The rendered image

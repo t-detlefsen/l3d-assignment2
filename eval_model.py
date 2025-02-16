@@ -15,6 +15,11 @@ from pytorch3d.transforms import Rotate, axis_angle_to_matrix
 import math
 import numpy as np
 
+from utils import *
+
+# NOTE: Temporary
+import ipdb
+
 def get_args_parser():
     parser = argparse.ArgumentParser('Singleto3D', add_help=False)
     parser.add_argument('--arch', default='resnet18', type=str)
@@ -162,14 +167,63 @@ def evaluate_model(args):
 
         predictions = model(images_gt, args)
 
-        metrics = evaluate(predictions, mesh_gt, thresholds, args)
+        try:
+            metrics = evaluate(predictions, mesh_gt, thresholds, args)
+        except:
+            print("Empty Mesh, skipping")
+            continue
 
-        # TODO:
-        # if (step % args.vis_freq) == 0:
-        #     # visualization block
-        #     #  rend = 
-        #     plt.imsave(f'vis/{step}_{args.type}.png', rend)
-      
+        if (step % args.vis_freq) == 0:
+            # Process Ground Truth
+            vertices = mesh_gt.verts_list()[0].unsqueeze(0)
+            faces = mesh_gt.faces_list()[0].unsqueeze(0)
+            textures = torch.ones_like(torch.tensor(vertices))
+            textures = textures * torch.tensor([0.7, 0.7, 1])
+            new_mesh_gt = pytorch3d.structures.Meshes(
+                verts=vertices,
+                faces=faces,
+                textures=pytorch3d.renderer.TexturesVertex(textures)
+            )
+            new_mesh_gt = new_mesh_gt.to(torch.device(args.device))
+
+            # Process outputs
+            if args.type == 'vox':
+                mesh = pytorch3d.ops.cubify(predictions.squeeze(0), 0.5, device=torch.device(args.device))
+                vertices = mesh.verts_list()[0].unsqueeze(0)
+                faces = mesh.faces_list()[0].unsqueeze(0)
+                textures = torch.ones_like(torch.tensor(vertices))
+                textures = textures * torch.tensor([0.7, 0.7, 1], device=torch.device(args.device))
+                pred = pytorch3d.structures.Meshes(
+                    verts=vertices,
+                    faces=faces,
+                    textures=pytorch3d.renderer.TexturesVertex(textures)
+                )
+                pred = pred.to(torch.device(args.device))
+            elif args.type == 'point':
+                feats = torch.ones_like(predictions)
+                feats = feats * torch.tensor([0.7, 0.7, 1], device=torch.device(args.device))
+                pred = pytorch3d.structures.Pointclouds(
+                    points=predictions,
+                    features=feats
+                )
+            elif args.type == 'mesh':
+                vertices = predictions.verts_list()[0].unsqueeze(0)
+                faces = predictions.faces_list()[0].unsqueeze(0)
+                textures = torch.ones_like(torch.tensor(vertices))
+                textures = textures * torch.tensor([0.7, 0.7, 1], device=torch.device(args.device))
+                pred = pytorch3d.structures.Meshes(
+                    verts=vertices,
+                    faces=faces,
+                    textures=pytorch3d.renderer.TexturesVertex(textures)
+                )
+                pred = pred.to(torch.device(args.device))
+
+            # Save input RGB
+            plt.imsave(f'outputs/{step}_{args.type}_rgb.png', (images_gt.squeeze(0).cpu().numpy() * 255).astype(np.uint8))
+            # Save Ground Truth
+            plt.imsave(f'outputs/{step}_{args.type}_gt.png', render(new_mesh_gt, args))
+            # Save Prediction
+            plt.imsave(f'outputs/{step}_{args.type}_pred.png', render(pred, args))
 
         total_time = time.time() - start_time
         iter_time = time.time() - iter_start_time

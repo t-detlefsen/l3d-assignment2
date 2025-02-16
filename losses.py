@@ -2,9 +2,6 @@ import torch
 from pytorch3d.ops import knn_points
 from pytorch3d.loss import mesh_laplacian_smoothing
 
-# NOTE: Temporary
-import ipdb
-
 # define losses
 def voxel_loss(voxel_src,voxel_tgt):
 	# voxel_src: b x h x w x d

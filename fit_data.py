@@ -12,9 +12,6 @@ import torch
 
 from utils import *
 
-
-
-
 def get_args_parser():
     parser = argparse.ArgumentParser('Model Fit', add_help=False)
     parser.add_argument('--lr', default=4e-4, type=float)
