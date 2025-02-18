@@ -17,9 +17,6 @@ import numpy as np
 
 from utils import *
 
-# NOTE: Temporary
-import ipdb
-
 def get_args_parser():
     parser = argparse.ArgumentParser('Singleto3D', add_help=False)
     parser.add_argument('--arch', default='resnet18', type=str)
@@ -32,7 +29,8 @@ def get_args_parser():
     parser.add_argument('--w_smooth', default=0.1, type=float)  
     parser.add_argument('--load_checkpoint', action='store_true')  
     parser.add_argument('--device', default='cuda', type=str) 
-    parser.add_argument('--load_feat', action='store_true') 
+    parser.add_argument('--load_feat', action='store_true')
+    parser.add_argument('--vis_all',  action='store_true') 
     return parser
 
 def preprocess(feed_dict, args):
@@ -188,17 +186,44 @@ def evaluate_model(args):
 
             # Process outputs
             if args.type == 'vox':
-                mesh = pytorch3d.ops.cubify(predictions.squeeze(0), 0.5, device=torch.device(args.device))
-                vertices = mesh.verts_list()[0].unsqueeze(0)
-                faces = mesh.faces_list()[0].unsqueeze(0)
-                textures = torch.ones_like(torch.tensor(vertices))
-                textures = textures * torch.tensor([0.7, 0.7, 1], device=torch.device(args.device))
-                pred = pytorch3d.structures.Meshes(
-                    verts=vertices,
-                    faces=faces,
-                    textures=pytorch3d.renderer.TexturesVertex(textures)
-                )
-                pred = pred.to(torch.device(args.device))
+                if args.vis_all:
+                    thresh = [0.45, 0.475, 0.5, 0.525, 0.55, 1.0]
+                    textures = torch.zeros((1, 1, 3), device=torch.device(args.device))
+                    mesh_list = []
+                    for i in range(len(thresh) - 1):
+                        pred = torch.where(predictions > thresh[i], predictions, torch.tensor(0))
+                        pred = torch.where(pred < thresh[i+1], pred, torch.tensor(0))
+                        if torch.sum(pred) == 0:
+                            continue
+                        mesh = pytorch3d.ops.cubify(pred.squeeze(0), thresh[i], device=torch.device(args.device))
+                        vertices = mesh.verts_list()[0].unsqueeze(0)
+                        faces = mesh.faces_list()[0].unsqueeze(0)
+                        color = torch.tensor([1, 0, 0]) * (1 - i/(len(thresh) - 2)) + torch.tensor([0, 1, 0]) * (i / (len(thresh) - 2))
+                        textures = torch.ones_like(mesh.verts_list()[0].unsqueeze(0)) * color.to(torch.device(args.device))
+                        pred = pytorch3d.structures.Meshes(
+                            verts=vertices,
+                            faces=faces,
+                            textures=pytorch3d.renderer.TexturesVertex(textures)
+                        )
+                        mesh_list.append(pred)
+
+                    pred = pytorch3d.structures.join_meshes_as_scene(mesh_list, True)
+                    pred = pred.to(torch.device(args.device))
+
+                    orbit(pred, f'outputs/{step}_{args.type}_pred.gif', args)
+                    exit()
+                else:
+                    mesh = pytorch3d.ops.cubify(predictions.squeeze(0), 0.5, device=torch.device(args.device))
+                    vertices = mesh.verts_list()[0].unsqueeze(0)
+                    faces = mesh.faces_list()[0].unsqueeze(0)
+                    textures = torch.ones_like(torch.tensor(vertices))
+                    textures = textures * torch.tensor([0.7, 0.7, 1], device=torch.device(args.device))
+                    pred = pytorch3d.structures.Meshes(
+                        verts=vertices,
+                        faces=faces,
+                        textures=pytorch3d.renderer.TexturesVertex(textures)
+                    )
+                    pred = pred.to(torch.device(args.device))
             elif args.type == 'point':
                 feats = torch.ones_like(predictions)
                 feats = feats * torch.tensor([0.7, 0.7, 1], device=torch.device(args.device))
@@ -223,7 +248,8 @@ def evaluate_model(args):
             # Save Ground Truth
             plt.imsave(f'outputs/{step}_{args.type}_gt.png', render(new_mesh_gt, args))
             # Save Prediction
-            plt.imsave(f'outputs/{step}_{args.type}_pred.png', render(pred, args))
+            if not args.vis_all:
+                plt.imsave(f'outputs/{step}_{args.type}_pred.png', render(pred, args))
 
         total_time = time.time() - start_time
         iter_time = time.time() - iter_start_time
