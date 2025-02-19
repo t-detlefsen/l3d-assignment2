@@ -92,7 +92,7 @@ def evaluate(predictions, mesh_gt, thresholds, args):
     if args.type == "vox":
         voxels_src = predictions
         H,W,D = voxels_src.shape[2:]
-        vertices_src, faces_src = mcubes.marching_cubes(voxels_src.detach().cpu().squeeze().numpy(), isovalue=0.5)
+        vertices_src, faces_src = mcubes.marching_cubes(voxels_src.detach().cpu().squeeze().numpy(), isovalue=0.4)
         vertices_src = torch.tensor(vertices_src).float()
         faces_src = torch.tensor(faces_src.astype(int))
         mesh_src = pytorch3d.structures.Meshes([vertices_src], [faces_src])
@@ -211,9 +211,10 @@ def evaluate_model(args):
                     pred = pred.to(torch.device(args.device))
 
                     orbit(pred, f'outputs/{step}_{args.type}_pred.gif', args)
+                    orbit(new_mesh_gt, f'outputs/{step}_{args.type}_gt.gif', args)
                     exit()
                 else:
-                    mesh = pytorch3d.ops.cubify(predictions.squeeze(0), 0.5, device=torch.device(args.device))
+                    mesh = pytorch3d.ops.cubify(predictions.squeeze(0), 0.4, device=torch.device(args.device))
                     vertices = mesh.verts_list()[0].unsqueeze(0)
                     faces = mesh.faces_list()[0].unsqueeze(0)
                     textures = torch.ones_like(torch.tensor(vertices))
